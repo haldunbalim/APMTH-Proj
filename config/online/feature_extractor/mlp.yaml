@@ -1,0 +1,2 @@
+_target_: apmth.networks.MLPFeatureExtractor
+mlp_dims: [128, 128]
