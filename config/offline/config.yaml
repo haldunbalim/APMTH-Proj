@@ -1,0 +1,16 @@
+# config/offline/config.yaml
+defaults:
+  - _self_
+  - model: ~
+
+wandb_project: "APMTH-Project"
+
+# Data parameters
+data_path: "data/random_data_20250504_132835.pkl"
+batch_size: 128
+num_workers: 4
+env_name: "l2rpn_case14_sandbox"
+
+# Training parameters
+n_epochs: 100
+every_n_epochs: 20

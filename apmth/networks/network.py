@@ -2,10 +2,9 @@ from torch_geometric.nn import GCNConv
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.nn import NNConv, global_mean_pool
-from .utils import MLP
+from torch_geometric.nn import global_mean_pool
 from gymnasium import spaces
-from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+
 from typing import Optional, List
 from apmth.env.env_adapter import Grid2OpEnvAdapter
 
@@ -26,19 +25,19 @@ class ResidualGCNBlock(nn.Module):
         res = self.residual_proj(x)
         return self.activation(out + res)
     
-class GNNFeatureExtractor(BaseFeaturesExtractor):
-    def __init__(self, observation_space: spaces.Space, env: Grid2OpEnvAdapter, 
-                 gcn_dims: List[int], residual: Optional[bool] = True):
-        super().__init__(observation_space, features_dim=gcn_dims[-1])
+class GNNEncoder(nn.Module):
+    def __init__(self, env: Grid2OpEnvAdapter, gcn_dims: List[int], residual: Optional[bool] = True):
+        super().__init__()
 
         self.graph_fn = env.get_obs_graph
 
         gcn_dims = [env.node_dim] + list(gcn_dims)
         if residual:
-            self.gcn_blocks = nn.ModuleList([ResidualGCNBlock(i, o) for i, o in zip(gcn_dims[:-1], gcn_dims[1:])])
+            self.gcn_blocks = nn.ModuleList(
+                [ResidualGCNBlock(i, o) for i, o in zip(gcn_dims[:-1], gcn_dims[1:])])
         else:
-            self.gcn_blocks = nn.ModuleList([GCNConv(i, o) for i, o in zip(gcn_dims[:-1], gcn_dims[1:])])
-        
+            self.gcn_blocks = nn.ModuleList(
+                [GCNConv(i, o) for i, o in zip(gcn_dims[:-1], gcn_dims[1:])])
 
     def batched_graph_fn(self, obs):
         from torch_geometric.data import Data, Batch
@@ -65,13 +64,28 @@ class GNNFeatureExtractor(BaseFeaturesExtractor):
             x = block(x, edge_index)
         x = global_mean_pool(x, batch)  # [batch_size, out_dim]
         return x
+    
 
-class MLPFeatureExtractor(BaseFeaturesExtractor):
-    def __init__(self, observation_space: spaces.Space, env: Grid2OpEnvAdapter, mlp_dims: List[int]):
-        super().__init__(observation_space, features_dim=mlp_dims[-1])
+class MLP(nn.Module):
+    def __init__(
+        self,
+        feature_sizes: list,
+        activation: type = nn.ReLU,
+        use_layer_norm: bool = False,
+    ):
+        def block(i, o, final=False):
+            ls = [nn.Linear(i, o)]
+            if use_layer_norm and not final:
+                ls.append(nn.LayerNorm(o))
+            if not final:
+                ls.append(activation())
+            return nn.Sequential(*ls)
+        super().__init__()
+        self.layers = nn.ModuleList([block(i, o, final=l == len(feature_sizes)-2)
+                                     for l, (i, o) in enumerate(zip(feature_sizes[:-1], feature_sizes[1:]))])
+        self.use_layer_norm = use_layer_norm
 
-        mlp_dims = [observation_space.shape[0]] + list(mlp_dims)
-        self.mlp = MLP(mlp_dims, activation=nn.SiLU)
-
-    def forward(self, obs):
-        return self.mlp(obs)
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x

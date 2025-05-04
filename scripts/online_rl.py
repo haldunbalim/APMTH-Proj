@@ -46,6 +46,8 @@ def main(cfg: DictConfig):
         policy_kwargs.update(feat_args)
     
     wandb.init(project=cfg.wandb_project, sync_tensorboard=True, dir='.', config=cfg_dict)
+    wandb.config.update({'log_dir': HydraConfig.get().run.dir,
+                        'script_name': os.path.basename(__file__)})
     model = algo_cls("MlpPolicy", env, verbose=1, tensorboard_log='.', policy_kwargs=policy_kwargs)
     new_logger = configure('.', ["tensorboard", "stdout"])
     model.set_logger(new_logger)

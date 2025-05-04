@@ -1,0 +1,3 @@
+_target_: apmth.networks.GNNAutoEncoder
+gcn_dims: [128, 128]
+residual: True
