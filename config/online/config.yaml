@@ -1,25 +1,23 @@
 defaults:
   - _self_
-  - feature_extractor: ~ 
+  - feature_extractor: null
 
 wandb_project: "APMTH-Project"
 
 # Environment
-env_name: "l2rpn_case14_sandbox_train-v0"
-eval_env_name: "l2rpn_case14_sandbox_val-v0"
+env_name: "l2rpn_case14_sandbox"
 
 # Algorithm: "ppo" or "sac"
 algo: "sac"
 mlp_layers: [128, 128]
 
 # Training configuration
-total_timesteps: 1_000_000
-checkpoint_freq: 10_000
-eval_freq: 10_000
+total_timesteps: 250_000
+checkpoint_freq: 50_000
+eval_freq: 50_000
 
 # Evaluation configuration
 train_envs: 5
 n_eval: 10
-eval_envs: 10
 
 

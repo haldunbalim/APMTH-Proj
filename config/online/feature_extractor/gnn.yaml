@@ -1,3 +1,4 @@
 _target_: apmth.networks.GNNFeatureExtractor
-gcn_dims: [128, 128]
-use_edge_attrs: true
+gcn_dims: [64, 64]
+share_weights: false
+residual: false

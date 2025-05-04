@@ -29,22 +29,19 @@ def main(cfg: DictConfig):
             f"Algorithm {cfg.algo} not supported. Use 'ppo' or 'sac'.")
 
     env = DummyVecEnv([
-        lambda: Monitor(gym.make(cfg.env_name))
+        lambda: Monitor(gym.make(cfg.env_name + '_train-v0'))
         for _ in range(cfg.train_envs)
     ])
-    eval_env = DummyVecEnv([
-        lambda: Monitor(gym.make(cfg.eval_env_name))
-        for _ in range(cfg.eval_envs)
-    ])
+    eval_env = Monitor(gym.make(cfg.env_name + '_val-v0'))
 
 
     policy_kwargs = {"net_arch": list(cfg.mlp_layers)}
-    if cfg.feature_extractor is not None:
+    if hasattr(cfg, "feature_extractor"):
         feat_args = {
             "features_extractor_class": get_class(cfg.feature_extractor._target_),
             "features_extractor_kwargs": {'env': env.envs[0].unwrapped,
-                                          **{k: v for k, v in cfg.feature_extractor.items() if k != "_target_"}},
-            "share_features_extractor": False
+                                          **{k: v for k, v in cfg.feature_extractor.items() if k not in {"_target_", "share_weights"}}},
+            "share_features_extractor": cfg.feature_extractor.share_weights,
         }
         policy_kwargs.update(feat_args)
     
