@@ -1,4 +1,5 @@
 from torch_geometric.nn import GCNConv
+from torch_geometric.nn import SAGEConv
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -9,9 +10,9 @@ from typing import Optional, List
 from apmth.env.env_adapter import Grid2OpEnvAdapter
 
 class ResidualGCNBlock(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, use_sage: bool = False):
         super().__init__()
-        self.gcn = GCNConv(in_channels, out_channels)
+        self.gcn = SAGEConv(in_channels, out_channels) if use_sage else GCNConv(in_channels, out_channels)
         self.norm = nn.LayerNorm(out_channels)
         self.activation = nn.SiLU()
 
@@ -26,7 +27,7 @@ class ResidualGCNBlock(nn.Module):
         return self.activation(out + res)
     
 class GNNEncoder(nn.Module):
-    def __init__(self, env: Grid2OpEnvAdapter, gcn_dims: List[int], residual: Optional[bool] = True):
+    def __init__(self, env: Grid2OpEnvAdapter, gcn_dims: List[int], residual: Optional[bool] = True, use_sage: bool = False):
         super().__init__()
 
         self.graph_fn = env.get_obs_graph
@@ -34,10 +35,10 @@ class GNNEncoder(nn.Module):
         gcn_dims = [env.node_dim] + list(gcn_dims)
         if residual:
             self.gcn_blocks = nn.ModuleList(
-                [ResidualGCNBlock(i, o) for i, o in zip(gcn_dims[:-1], gcn_dims[1:])])
+                [ResidualGCNBlock(i, o, use_sage=use_sage) for i, o in zip(gcn_dims[:-1], gcn_dims[1:])])
         else:
             self.gcn_blocks = nn.ModuleList(
-                [GCNConv(i, o) for i, o in zip(gcn_dims[:-1], gcn_dims[1:])])
+                [SAGEConv(i, o) if use_sage else GCNConv(i, o) for i, o in zip(gcn_dims[:-1], gcn_dims[1:])])
 
     def batched_graph_fn(self, obs):
         from torch_geometric.data import Data, Batch

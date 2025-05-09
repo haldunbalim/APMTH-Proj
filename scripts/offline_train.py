@@ -14,7 +14,7 @@ import wandb
 from hydra.core.hydra_config import HydraConfig
 
 
-@hydra.main(config_path="../config/offline", config_name="config")
+@hydra.main(config_path="../config/offline", config_name="config", version_base="1.1")
 def main(cfg: DictConfig):
 
     datamodule = TransitionDataModule(
@@ -41,7 +41,7 @@ def main(cfg: DictConfig):
         every_n_epochs=cfg.every_n_epochs,
     )
 
-    trainer = pl.Trainer(callbacks=[checkpoint_callback], accelerator='auto', devices='auto',
+    trainer = pl.Trainer(callbacks=[checkpoint_callback], accelerator='auto', devices=1,
                          logger=loggers, gradient_clip_algorithm='norm',
                          gradient_clip_val=1.0,
                          log_every_n_steps=300, max_epochs=cfg.n_epochs,

@@ -1,3 +1,4 @@
 _target_: apmth.networks.GNNAutoEncoder
-gcn_dims: [128, 128]
+gcn_dims: [256, 256, 256]
 residual: True
+use_sage: False

@@ -10,7 +10,8 @@ from apmth.networks import GNNEncoder
 
 class GNNAutoEncoder(BaseModel):
 
-    def __init__(self, env: Grid2OpEnvAdapter, gcn_dims: List[int], residual: Optional[bool] = True):
+    def __init__(self, env: Grid2OpEnvAdapter, gcn_dims: List[int], 
+                 residual: Optional[bool] = True, use_sage: Optional[bool] = False):
         super().__init__()
         nx = env.observation_space.shape[0]
         nu = env.action_space.shape[0]
@@ -19,13 +20,17 @@ class GNNAutoEncoder(BaseModel):
         self.decoder = MLP([gcn_dims[-1]*2] + gcn_dims[:-1]
                            [::-1] + [nx], activation=nn.SiLU)
 
-        self.x_encoder = GNNEncoder(env, gcn_dims, residual)
+        self.x_encoder = GNNEncoder(env, gcn_dims, residual=residual, use_sage=use_sage)
+        self.encode_dim = gcn_dims[-1]
 
     def compute_losses(self, input_dict, intermediate_dict):
         ae_loss = F.mse_loss(
             intermediate_dict['pred'], input_dict["next_state"])
         output_dict = {"optimized_loss": ae_loss}
         return output_dict
+
+    def encode(self, state):
+        return self.x_encoder(state)
 
     def predict_step(self, input_dict, batch_idx=None):
         x_encoded = self.x_encoder(input_dict["state"])
@@ -41,6 +46,7 @@ class MLPAutoEncoder(BaseModel):
         super().__init__()
         nx = env.observation_space.shape[0]
         nu = env.action_space.shape[0]
+        self.encode_dim = mlp_dims[-1]
         self.x_encoder = MLP([nx] + mlp_dims, activation=nn.SiLU)
         self.u_encoder = nn.Linear(nu, mlp_dims[-1])
         self.decoder = MLP([mlp_dims[-1]*2] + mlp_dims[:-1]
@@ -52,9 +58,12 @@ class MLPAutoEncoder(BaseModel):
         output_dict = {"optimized_loss": ae_loss}
         return output_dict
 
+    def encode(self, state):
+        return self.x_encoder(state)
+    
     def predict_step(self, input_dict, batch_idx=None):
         x, u = input_dict["state"], input_dict["action"]
-        x_encoded = self.x_encoder(x)
+        x_encoded = self.encode(x)
         u_encoded = self.u_encoder(u)
         pred = self.decoder(torch.cat([x_encoded, u_encoded], dim=-1))
         return {'pred': pred}

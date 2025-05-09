@@ -32,7 +32,6 @@ class TransitionDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
 
     def setup(self, stage: Optional[str] = None):
-        
         fpath = os.path.abspath(__file__)
         dpath = os.path.abspath(os.path.join(fpath, "../../.."))
         with open(os.path.join(dpath, self.data_path), "rb") as f:

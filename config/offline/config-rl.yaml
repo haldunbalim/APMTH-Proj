@@ -1,0 +1,27 @@
+# config/offline/config-rl.yaml
+defaults:
+  - _self_
+  - model: gnn
+
+wandb_project: "APMTH-Project"
+
+# Environment
+env_name: "l2rpn_case14_sandbox"
+
+# Algorithm: "ppo" or "sac"
+algo: "sac"
+mlp_layers: [128, 128]
+
+# Training configuration
+total_timesteps: 250_000
+checkpoint_freq: 50_000
+eval_freq: 50_000
+
+# Evaluation configuration
+train_envs: 5
+n_eval: 10
+
+#ckpt_file: 'outputs/2025-05-04/15-33-42/checkpoints/epoch=99.ckpt' # gnn-sage
+#ckpt_file: 'outputs/2025-05-04/15-56-12/checkpoints/epoch=99.ckpt' # mlp
+ckpt_file: 'outputs/2025-05-04/15-24-12/checkpoints/epoch=99.ckpt' # gnn
+

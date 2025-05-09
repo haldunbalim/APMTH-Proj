@@ -1,2 +1,2 @@
 _target_: apmth.networks.MLPAutoEncoder
-mlp_dims: [128, 128]
+mlp_dims: [256, 256, 256]

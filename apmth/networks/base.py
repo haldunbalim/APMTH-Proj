@@ -19,7 +19,7 @@ class BaseModel(pl.LightningModule):
     def log_output_dct(self, output_dict, typ):
         for k in output_dict:
             if "loss" in k or "metric" in k:
-                self.log(typ+"_"+k, output_dict[k], on_step=False, on_epoch=True,
+                self.log(typ+"_"+k, output_dict[k], on_step=True, on_epoch=True,
                          prog_bar=True, logger=True)
 
     def training_step(self, input_dict, batch_idx):
@@ -45,6 +45,3 @@ class BaseModel(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=3e-4)
         return optimizer
-    
-    def on_epoch_end(self):
-        self.log("epoch", self.current_epoch)

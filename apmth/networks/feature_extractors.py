@@ -16,13 +16,21 @@ class GNNFeatureExtractor(BaseFeaturesExtractor):
     def forward(self, obs):
         return self.encoder(obs)
 
-
 class MLPFeatureExtractor(BaseFeaturesExtractor):
     def __init__(self, observation_space: spaces.Space, env: Grid2OpEnvAdapter, mlp_dims: List[int]):
         super().__init__(observation_space, features_dim=mlp_dims[-1])
 
         mlp_dims = [observation_space.shape[0]] + list(mlp_dims)
-        self.mlp = MLP(mlp_dims, activation=nn.SiLU)
+        self.mlp = MLP(mlp_dims, activation=nn.SiLU, use_layer_norm=True)
 
     def forward(self, obs):
         return self.mlp(obs)
+    
+class FrozenFeatureExtractor(BaseFeaturesExtractor):
+    def __init__(self, observation_space: spaces.Space, encode_fn: callable, encode_dim: int):
+        super().__init__(observation_space, features_dim=encode_dim)
+        self.encode_fn = encode_fn
+
+    def forward(self, obs):
+        with torch.no_grad():
+            return self.encode_fn(obs)
